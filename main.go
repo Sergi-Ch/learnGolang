@@ -1,14 +1,30 @@
 package main
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+)
+
+const anyPrice = 100
 
 func main() {
-	for i := 0; i < 10; i++ {
-		for j := 0; j < 10; j++ {
-			fmt.Print(" *")
-		}
-		fmt.Println()
+	change, err := canYouBye(90, 17)
+	checkError(change, err)
+}
 
+func canYouBye(money, age int) (int, error) {
+	if anyPrice <= money && age >= 18 {
+		return money - anyPrice, nil
+	} else if age < 18 {
+		return money, errors.New("you're child :( ")
+	} else {
+		return money, errors.New("it's expensive for you")
 	}
-
+}
+func checkError(change int, err error) {
+	if err != nil {
+		fmt.Println("Неудача>>> ", err.Error())
+	} else {
+		fmt.Println("your change >>> ", change)
+	}
 }
