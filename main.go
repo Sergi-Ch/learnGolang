@@ -1,33 +1,24 @@
 package main
 
-import (
-	"fmt"
-	"math/rand"
-	"time"
-)
-
-const (
-	min = 1
-	max = 5
-)
+import "fmt"
 
 func main() {
-	rand.Seed(time.Now().UnixNano())
-	value := rand.Intn(max-min) + min // рандомная переменная
+	//default value
+	var intPointer *int // раз не даем значение - он сразу присваивает nill
+	fmt.Printf("defuault value %T %#v \n", intPointer, intPointer)
 
-	switch value {
-	case 1:
-		fmt.Println("Number is one")
+	//получение не nill указателей (более безопасно)
+	//указатель на существующую переменную
+	var a int64 = 10 // сама переменная
+	fmt.Printf("%T %#v \n", a, a)
 
-	case 2, 3:
-		fmt.Println("Number two or three")
-		fallthrough // чтобы провалиться в следующий кейс
+	var pointerA *int64 = &a // присваиваем переменной указатель на а, тип можно указывать, можно нет, он сам понимает
+	fmt.Printf("указатель на существующую переменную тип %T значение адреса %#v значение с разыменовыванием %#v \n", pointerA, pointerA, *pointerA)
 
-	case 10:
-		fmt.Println("magic")
-
-	default:
-		fmt.Println("this is a default case, when other cases don't work")
-	}
+	// указатель с помощью new (безопаснее, чем самый 1 вариант из-за дефолтного значения)
+	var newPointer = new(float64)
+	fmt.Printf("Указатель с помощью new %T %#v вниманеие на значение по умолчанию >> %#v \n", newPointer, newPointer, *newPointer)
+	*newPointer = 7
+	fmt.Printf("Указатель с помощью new %T %#v вниманеие на значение >> %#v \n", newPointer, newPointer, *newPointer)
 
 }
