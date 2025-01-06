@@ -1,30 +1,33 @@
 package main
 
 import (
-	"errors"
 	"fmt"
+	"math/rand"
+	"time"
 )
 
-const anyPrice = 100
+const (
+	min = 1
+	max = 5
+)
 
 func main() {
-	change, err := canYouBye(90, 17)
-	checkError(change, err)
-}
+	rand.Seed(time.Now().UnixNano())
+	value := rand.Intn(max-min) + min // рандомная переменная
 
-func canYouBye(money, age int) (int, error) {
-	if anyPrice <= money && age >= 18 {
-		return money - anyPrice, nil
-	} else if age < 18 {
-		return money, errors.New("you're child :( ")
-	} else {
-		return money, errors.New("it's expensive for you")
+	switch value {
+	case 1:
+		fmt.Println("Number is one")
+
+	case 2, 3:
+		fmt.Println("Number two or three")
+		fallthrough // чтобы провалиться в следующий кейс
+
+	case 10:
+		fmt.Println("magic")
+
+	default:
+		fmt.Println("this is a default case, when other cases don't work")
 	}
-}
-func checkError(change int, err error) {
-	if err != nil {
-		fmt.Println("Неудача>>> ", err.Error())
-	} else {
-		fmt.Println("your change >>> ", change)
-	}
+
 }
