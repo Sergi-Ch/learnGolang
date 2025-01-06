@@ -1,24 +1,57 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"time"
+)
+
+type Person struct {
+	Name string
+	Age  int
+}
 
 func main() {
-	//default value
-	var intPointer *int // раз не даем значение - он сразу присваивает nill
-	fmt.Printf("defuault value %T %#v \n", intPointer, intPointer)
+	//инициализация структуры с дефолтным значением (первый вариант)
+	var John Person
+	fmt.Printf("default first>> %T , %#v , \n", John, John)
 
-	//получение не nill указателей (более безопасно)
-	//указатель на существующую переменную
-	var a int64 = 10 // сама переменная
-	fmt.Printf("%T %#v \n", a, a)
+	//инициализация структуры с дефолтным значением (второй вариант)
+	John2 := Person{}
+	fmt.Printf("default second>> %T , %#v , \n", John2, John2)
 
-	var pointerA *int64 = &a // присваиваем переменной указатель на а, тип можно указывать, можно нет, он сам понимает
-	fmt.Printf("указатель на существующую переменную тип %T значение адреса %#v значение с разыменовыванием %#v \n", pointerA, pointerA, *pointerA)
+	//изменение полей структуры
+	John.Name = "John"
+	John.Age = 25
+	fmt.Println("заполненные поля у Джона", John)
 
-	// указатель с помощью new (безопаснее, чем самый 1 вариант из-за дефолтного значения)
-	var newPointer = new(float64)
-	fmt.Printf("Указатель с помощью new %T %#v вниманеие на значение по умолчанию >> %#v \n", newPointer, newPointer, *newPointer)
-	*newPointer = 7
-	fmt.Printf("Указатель с помощью new %T %#v вниманеие на значение >> %#v \n", newPointer, newPointer, *newPointer)
+	//инициализация объекта и его полей
 
+	Brad := Person{
+		Name: "Brad",
+		Age:  43,
+	}
+	fmt.Println(Brad)
+
+	//инициализация сразу в одну строку по порядку полей
+	Volodya := Person{"Volodya", 24}
+	fmt.Println(Volodya)
+
+	pVolodya := &Volodya         // получение указателя на объект Volodya
+	fmt.Println((*pVolodya).Age) // сначала разыменовываем, чтобы потом обратиться к полю структуры
+	fmt.Println(pVolodya.Age)    //синтаксический сахар go, обычно используют такой метод
+
+	pIvan := &Person{"Ivan", 10} // создание сразу указателя на объект
+	fmt.Println(pIvan, *pIvan)
+
+	//создание анонимных структур, то есть без имени
+
+	unnamedStruct := struct {
+		Name, LastName, BirdDate string
+	}{
+		Name:     "NoName",
+		LastName: "NoLastName",
+		BirdDate: fmt.Sprintf("%s", time.Now()), //библиотека для работы со временем
+		//или BirdDate: time.Now().String() будет одинаковый результат
+	}
+	fmt.Println(unnamedStruct)
 }
