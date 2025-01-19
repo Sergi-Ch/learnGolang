@@ -2,89 +2,82 @@ package main
 
 import "fmt"
 
-// Определение интерфейса Builder с методом Build
-type Builder interface {
-	Build()
-}
-
-// Тип Person, который будет встраиваться в другие типы
-type Person struct {
-	Name string
+type person struct {
 	Age  int
+	Name string
 }
 
-// Тип WoodBuilder, который встраивает тип Person
-type WoodBuilder struct {
-	Person // Встраивание типа Person
-}
-
-// Реализация метода Build для типа WoodBuilder
-func (wb WoodBuilder) Build() {
-	fmt.Println("Строю дом из дерева")
-}
-
-// Тип BrickBuilder, который встраивает тип Person
-type BrickBuilder struct {
-	Person // Встраивание типа Person
-}
-
-// Реализация метода Build для типа BrickBuilder
-func (bb BrickBuilder) Build() {
-	fmt.Println("Строю дом из кирпича")
-}
-
-// Тип Building, который встраивает интерфейс Builder
-type Building struct {
-	Builder // Встраивание интерфейса Builder
-	Name    string
-}
-
-/*
-// Пример метода для типа Person (закомментирован)
-func (p Person) printName() {
-    fmt.Println(p.Name)
-}
-
-// Пример функции для объяснения встраивания (закомментирован)
-func explanation() {
-    builder := WoodBuilder{Person{Name: "Вася", Age: 12}, "Боб"}
-    fmt.Printf("Type: %T, Value: %#v \n", builder, builder)
-    fmt.Println(builder.Person.Age)
-    fmt.Println(builder.Age)
-
-    builder.printName()
-    fmt.Println(builder.Name)
-}
-*/
-
-// Функция useCase демонстрирует использование встраивания и интерфейсов
-func useCase() {
-	// Создание экземпляра Building с WoodBuilder
-	woodenBuilding := Building{
-		Builder: WoodBuilder{Person{
-			Name: "Вася",
-			Age:  40,
-		}},
-		Name: "Деревянная изба",
-	}
-	// Вызов метода Build для WoodBuilder
-	woodenBuilding.Build()
-
-	// Создание экземпляра Building с BrickBuilder
-	brickBuilding := Building{
-		Builder: BrickBuilder{
-			Person{
-				Name: "Петя",
-				Age:  30,
-			},
+func explainArrays() {
+	var intArr [5]int
+	stringArr := [...]string{"first", "second", "third"}
+	people := [...]person{
+		{
+			Age:  30,
+			Name: "NameOne",
 		},
-		Name: "Кирпичный дом",
+		{
+			Age:  25,
+			Name: "NameTwo",
+		},
 	}
-	// Вызов метода Build для BrickBuilder
-	brickBuilding.Build()
+
+	for i := 0; i < len(intArr); i++ {
+		fmt.Printf("index %d value: %d \n", i, intArr[i])
+	}
+	for i := 0; i < len(stringArr); i++ {
+		fmt.Printf("index %d value: %s \n", i, stringArr[i])
+	}
+	for i := 0; i < len(people); i++ {
+		fmt.Printf("index %d value: %#v \n", i, people[i])
+	}
+
+	fmt.Println("for-range")
+
+	for ind, value := range people {
+		fmt.Printf("index %d value: %#v \n", ind, value)
+	}
+	for _, value := range people {
+		fmt.Printf("value: %#v \n", value)
+	}
+	for ind, _ := range people {
+		fmt.Printf("index %d  \n", ind)
+	}
+
+	NewIntArr := changeArr(intArr)
+	fmt.Println("after copping")
+	fmt.Printf("Type %T value %#v \n", intArr, intArr)
+	fmt.Printf("Type %T value %#v \n", NewIntArr, NewIntArr)
+
+}
+func changeArr(arr [5]int) [5]int {
+	arr[4] = 8
+	return arr
+}
+
+func explainSlices() {
+	fmt.Println("about slices>>")
+	var defaultSlice []int
+	fmt.Printf("Type %T value %#v \n", defaultSlice, defaultSlice)
+	fmt.Printf("length %d capacity %#v\n\n", len(defaultSlice), cap(defaultSlice))
+	stringSliceLiteral := []string{"first", "second"}
+	fmt.Printf("Type %T value %#v \n", stringSliceLiteral, stringSliceLiteral)
+	fmt.Printf("length %d capacity %#v\n\n", len(stringSliceLiteral), cap(stringSliceLiteral))
+
+	sliceByMake := make([]int, 3, 5)
+	fmt.Printf("Type %T value %#v \n", sliceByMake, sliceByMake)
+	fmt.Printf("length %d capacity %#v\n\n", len(sliceByMake), cap(sliceByMake))
+	sliceByMake = append(sliceByMake, 1, 2, 3, 4, 5, 6)
+
+	fmt.Printf("Type %T value %#v \n", sliceByMake, sliceByMake)
+	fmt.Printf("length %d capacity %#v\n\n", len(sliceByMake), cap(sliceByMake))
+
+	for ind, value := range sliceByMake {
+		fmt.Printf("index: %d value: %#v\n", ind, value)
+	}
 }
 
 func main() {
-	// Вызов функции useCase для демонстрации
-	useCase()
+	explainArrays()
+
+	explainSlices()
 }
