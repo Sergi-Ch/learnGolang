@@ -2,82 +2,68 @@ package main
 
 import "fmt"
 
-type person struct {
-	Age  int
-	Name string
-}
-
-func explainArrays() {
-	var intArr [5]int
-	stringArr := [...]string{"first", "second", "third"}
-	people := [...]person{
-		{
-			Age:  30,
-			Name: "NameOne",
-		},
-		{
-			Age:  25,
-			Name: "NameTwo",
-		},
-	}
-
-	for i := 0; i < len(intArr); i++ {
-		fmt.Printf("index %d value: %d \n", i, intArr[i])
-	}
-	for i := 0; i < len(stringArr); i++ {
-		fmt.Printf("index %d value: %s \n", i, stringArr[i])
-	}
-	for i := 0; i < len(people); i++ {
-		fmt.Printf("index %d value: %#v \n", i, people[i])
-	}
-
-	fmt.Println("for-range")
-
-	for ind, value := range people {
-		fmt.Printf("index %d value: %#v \n", ind, value)
-	}
-	for _, value := range people {
-		fmt.Printf("value: %#v \n", value)
-	}
-	for ind, _ := range people {
-		fmt.Printf("index %d  \n", ind)
-	}
-
-	NewIntArr := changeArr(intArr)
-	fmt.Println("after copping")
-	fmt.Printf("Type %T value %#v \n", intArr, intArr)
-	fmt.Printf("Type %T value %#v \n", NewIntArr, NewIntArr)
-
-}
-func changeArr(arr [5]int) [5]int {
-	arr[4] = 8
-	return arr
-}
-
-func explainSlices() {
-	fmt.Println("about slices>>")
-	var defaultSlice []int
-	fmt.Printf("Type %T value %#v \n", defaultSlice, defaultSlice)
-	fmt.Printf("length %d capacity %#v\n\n", len(defaultSlice), cap(defaultSlice))
-	stringSliceLiteral := []string{"first", "second"}
-	fmt.Printf("Type %T value %#v \n", stringSliceLiteral, stringSliceLiteral)
-	fmt.Printf("length %d capacity %#v\n\n", len(stringSliceLiteral), cap(stringSliceLiteral))
-
-	sliceByMake := make([]int, 3, 5)
-	fmt.Printf("Type %T value %#v \n", sliceByMake, sliceByMake)
-	fmt.Printf("length %d capacity %#v\n\n", len(sliceByMake), cap(sliceByMake))
-	sliceByMake = append(sliceByMake, 1, 2, 3, 4, 5, 6)
-
-	fmt.Printf("Type %T value %#v \n", sliceByMake, sliceByMake)
-	fmt.Printf("length %d capacity %#v\n\n", len(sliceByMake), cap(sliceByMake))
-
-	for ind, value := range sliceByMake {
-		fmt.Printf("index: %d value: %#v\n", ind, value)
-	}
-}
-
 func main() {
-	explainArrays()
+	//variadicFunctions()
+	//convertToArrayPointer()
+	//passToFunction()
+}
 
-	explainSlices()
+func variadicFunctions() {
+	showAllElements(1, 2, 3)
+	showAllElements(1, 2, 3, 5, 6, 7)
+	firstSlice := []int{9, 8, 7, 6, 5}
+	secondSlice := []int{3, 3, 3, 3, 3, 3, 3}
+
+	showAllElements(firstSlice...)
+	newSlice := append(firstSlice, secondSlice...)
+	fmt.Printf("type: %T value: %#v", newSlice, newSlice)
+}
+
+func showAllElements(values ...int) {
+	for _, val := range values {
+		fmt.Printf("Value: %#v\n", val)
+	}
+	fmt.Println()
+}
+
+func convertToArrayPointer() {
+	initialSlice := []int{1, 2}
+	fmt.Printf("type: %T value: %#v\n", initialSlice, initialSlice)
+	fmt.Printf("len: %d capacity: %d\n\n", len(initialSlice), cap(initialSlice))
+
+	intArray := (*[2]int)(initialSlice)
+	fmt.Printf("type: %T value: %#v\n", intArray, intArray)
+	fmt.Printf("len: %d capacity: %d\n\n", len(intArray), cap(intArray))
+
+}
+
+func passToFunction() {
+	inicialSlice := []int{1, 2, 3, 4, 5}
+	fmt.Printf("type: %T value: %#v\n", inicialSlice, inicialSlice)
+	fmt.Printf("len: %d capacity: %d\n\n", len(inicialSlice), cap(inicialSlice))
+
+	forTestPassSlice(inicialSlice)
+
+	fmt.Printf("type: %T value: %#v\n", inicialSlice, inicialSlice)
+	fmt.Printf("len: %d capacity: %d\n\n", len(inicialSlice), cap(inicialSlice))
+
+	inicialSlice = append(inicialSlice, 3)
+	fmt.Printf("type: %T value: %#v\n", inicialSlice, inicialSlice)
+	fmt.Printf("len: %d capacity: %d\n\n", len(inicialSlice), cap(inicialSlice))
+
+	inicialSlice = appendVaulue(inicialSlice)
+	fmt.Printf("type: %T value: %#v\n", inicialSlice, inicialSlice)
+	fmt.Printf("len: %d capacity: %d\n\n", len(inicialSlice), cap(inicialSlice))
+
+}
+
+func forTestPassSlice(slice []int) {
+	slice[1] = 0
+}
+
+func appendVaulue(slice []int) []int {
+	slice = append(slice, 10, 11)
+	fmt.Printf("type: %T value: %#v\n", slice, slice)
+	fmt.Printf("len: %d capacity: %d\n\n", len(slice), cap(slice))
+	return slice
 }
