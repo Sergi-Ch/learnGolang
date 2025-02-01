@@ -3,67 +3,37 @@ package main
 import "fmt"
 
 func main() {
-	//variadicFunctions()
-	//convertToArrayPointer()
-	//passToFunction()
-}
+	var defaultMap map[int]string
+	fmt.Printf("value: %#v tupe: %T\n", defaultMap, defaultMap)
 
-func variadicFunctions() {
-	showAllElements(1, 2, 3)
-	showAllElements(1, 2, 3, 5, 6, 7)
-	firstSlice := []int{9, 8, 7, 6, 5}
-	secondSlice := []int{3, 3, 3, 3, 3, 3, 3}
+	mapWithNew := *new(map[int64]string)
+	fmt.Printf("value: %#v tupe: %T\n", mapWithNew, mapWithNew)
 
-	showAllElements(firstSlice...)
-	newSlice := append(firstSlice, secondSlice...)
-	fmt.Printf("type: %T value: %#v", newSlice, newSlice)
-}
+	mapByMake := make(map[string]string)
+	fmt.Printf("value: %#v tupe: %T\n", mapByMake, mapByMake)
 
-func showAllElements(values ...int) {
-	for _, val := range values {
-		fmt.Printf("Value: %#v\n", val)
+	mapByLiteral := map[int]string{1: "first", 2: "second"}
+	fmt.Printf("value: %#v tupe: %T\n", mapByLiteral, mapByLiteral)
+
+	fmt.Println(mapByLiteral[1])
+
+	value, ok := mapByLiteral[3]
+	fmt.Printf("value: %#v isThereInMap?>> %t\n", value, ok)
+
+	mapByLiteral[3] = "Third"
+	fmt.Printf("value: %#v tupe: %T\n", mapByLiteral, mapByLiteral)
+
+	mapByLiteral[3] = "surprise"
+	fmt.Printf("value: %#v tupe: %T\n", mapByLiteral, mapByLiteral)
+
+	delete(mapByLiteral, 3)
+	fmt.Printf("value: %#v tupe: %T\n", mapByLiteral, mapByLiteral)
+
+	mapByLiteral[3] = "third"
+	mapByLiteral[4] = "thou"
+
+	for key, val := range mapByLiteral {
+		fmt.Printf("key: %d value: %#v \n", key, val)
 	}
-	fmt.Println()
-}
 
-func convertToArrayPointer() {
-	initialSlice := []int{1, 2}
-	fmt.Printf("type: %T value: %#v\n", initialSlice, initialSlice)
-	fmt.Printf("len: %d capacity: %d\n\n", len(initialSlice), cap(initialSlice))
-
-	intArray := (*[2]int)(initialSlice)
-	fmt.Printf("type: %T value: %#v\n", intArray, intArray)
-	fmt.Printf("len: %d capacity: %d\n\n", len(intArray), cap(intArray))
-
-}
-
-func passToFunction() {
-	inicialSlice := []int{1, 2, 3, 4, 5}
-	fmt.Printf("type: %T value: %#v\n", inicialSlice, inicialSlice)
-	fmt.Printf("len: %d capacity: %d\n\n", len(inicialSlice), cap(inicialSlice))
-
-	forTestPassSlice(inicialSlice)
-
-	fmt.Printf("type: %T value: %#v\n", inicialSlice, inicialSlice)
-	fmt.Printf("len: %d capacity: %d\n\n", len(inicialSlice), cap(inicialSlice))
-
-	inicialSlice = append(inicialSlice, 3)
-	fmt.Printf("type: %T value: %#v\n", inicialSlice, inicialSlice)
-	fmt.Printf("len: %d capacity: %d\n\n", len(inicialSlice), cap(inicialSlice))
-
-	inicialSlice = appendVaulue(inicialSlice)
-	fmt.Printf("type: %T value: %#v\n", inicialSlice, inicialSlice)
-	fmt.Printf("len: %d capacity: %d\n\n", len(inicialSlice), cap(inicialSlice))
-
-}
-
-func forTestPassSlice(slice []int) {
-	slice[1] = 0
-}
-
-func appendVaulue(slice []int) []int {
-	slice = append(slice, 10, 11)
-	fmt.Printf("type: %T value: %#v\n", slice, slice)
-	fmt.Printf("len: %d capacity: %d\n\n", len(slice), cap(slice))
-	return slice
 }
