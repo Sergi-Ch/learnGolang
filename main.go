@@ -2,93 +2,188 @@ package main
 
 import (
 	"fmt"
+	"sync"
+	"time"
 )
 
 func main() {
-	// Запуск горутины, которая выводит числа от 0 до 99
-	// go showNubmers(100)
-
-	// Передача управления другой горутине
-	// runtime.Gosched()
-
-	// Установка максимального количества процессоров, используемых для выполнения горутин
-	// runtime.GOMAXPROCS(1)
-
-	// Вывод количества доступных процессоров
-	// fmt.Println(runtime.NumCPU())
-
-	// Регистрация defer функций, которые будут выполнены перед завершением функции main
-	// defer fmt.Println(1)
-	// defer fmt.Println(2)
-	// fmt.Println("exit")
-
-	// Вызов функции sum и вывод результата
-	// println(sum(1, 2))
-
-	// Вызов функции deferValues для демонстрации работы defer
-	// deferValues()
-
-	// Вызов функции makePanic для демонстрации работы panic и recover
-	makePanic()
-
-	// Этот код не будет выполнен, так как makePanic вызывает панику
-	fmt.Println("after panic")
+	//withoutWait()
+	//withWait()
+	//wrongAdd()
+	writeWithoutConcurrent()
+	writeWithConcurrent()
+	writeWithMutexConcurrent()
+	readWithMutex()
+	readWithRWMutex()
 }
 
-// Функция, которая выводит числа от 0 до numb-1
-func showNubmers(numb int) {
-	for i := 0; i < numb; i++ {
-		fmt.Println(i)
+func withoutWait() {
+	for i := 0; i < 10; i++ {
+		go fmt.Println(i + 1)
 	}
+
+	fmt.Println("exit")
 }
 
-// Функция, которая суммирует два числа и умножает результат на 2 с помощью defer
-func sum(x, y int) (sum int) {
-	defer func() {
-		sum *= 2
-	}()
-	sum = x + y
-	return
-}
+func withWait() {
+	var wg sync.WaitGroup //создаем wait группу
+	wg.Add(10)
 
-// Функция, демонстрирующая различные способы использования defer
-func deferValues() {
-	// Правильный вариант: defer регистрирует вывод значения i на каждой итерации
 	for i := 0; i < 10; i++ {
-		defer fmt.Println("first", i)
-	}
-
-	// Неправильный вариант: defer регистрирует вывод значения i, которое изменяется на каждой итерации
-	for i := 0; i < 10; i++ {
-		defer func() {
-			fmt.Println("second", i)
-		}()
-	}
-
-	// Исправленный вариант: defer регистрирует вывод значения k, которое является копией i
-	for i := 0; i < 10; i++ {
-		k := i
-		defer func() {
-			fmt.Println("first fix of second", k)
-		}()
-	}
-
-	// Исправленный вариант: defer регистрирует вывод значения k, которое передается как аргумент
-	for i := 0; i < 10; i++ {
-		defer func(k int) {
-			fmt.Println("second fix of second", k)
+		go func(i int) {
+			fmt.Println(i + 1)
+			wg.Done()
 		}(i)
 	}
+	wg.Wait()
+	fmt.Println("exit")
 }
 
-// Функция, демонстрирующая работу panic и recover
-func makePanic() {
-	defer func() {
-		// Восстановление после паники и вывод значения, переданного в panic
-		panicValue := recover()
-		fmt.Println(panicValue)
-	}()
+func wrongAdd() {
+	var wg sync.WaitGroup
+	for i := 0; i < 10; i++ {
 
-	// Вызов паники с сообщением "some panic"
-	panic("some panic")
+		go func(i int) {
+			wg.Add(1)
+
+			defer wg.Done()
+			fmt.Println(i + 1)
+		}(i)
+
+	}
+
+}
+
+func writeWithoutConcurrent() {
+	fmt.Println("writeWithoutConcurrent")
+	start := time.Now()
+	var counter int
+
+	for i := 0; i < 1000; i++ {
+		time.Sleep(time.Nanosecond)
+		counter++
+	}
+
+	fmt.Println(counter)
+	fmt.Println(time.Now().Sub(start).Seconds())
+}
+
+func writeWithConcurrent() {
+	fmt.Println("\nwriteWithConcurrent")
+	start := time.Now()
+	var counter int
+	var wg sync.WaitGroup
+	wg.Add(1000)
+	for i := 0; i < 1000; i++ {
+		go func() {
+			defer wg.Done()
+			time.Sleep(time.Nanosecond)
+			counter++
+
+		}()
+
+	}
+	wg.Wait()
+	fmt.Println(counter)
+	fmt.Println(time.Now().Sub(start).Seconds())
+}
+
+func writeWithMutexConcurrent() {
+	fmt.Println("\nwriteWithMutexConcurrent")
+	start := time.Now()
+	var counter int
+	var wg sync.WaitGroup
+	var mu sync.Mutex
+
+	wg.Add(1000)
+
+	for i := 0; i < 1000; i++ {
+		go func() {
+			defer wg.Done()
+			time.Sleep(time.Nanosecond)
+			mu.Lock()
+			counter++
+			mu.Unlock()
+
+		}()
+
+	}
+	wg.Wait()
+	fmt.Println(counter)
+	fmt.Println(time.Now().Sub(start).Seconds())
+}
+
+func readWithMutex() {
+	fmt.Println("\n readWithMutex")
+
+	start := time.Now()
+	var counter int
+	var wg sync.WaitGroup
+	var mu sync.Mutex
+
+	wg.Add(100)
+
+	for i := 0; i < 50; i++ {
+		go func() {
+			defer wg.Done()
+
+			mu.Lock()
+			time.Sleep(time.Nanosecond)
+			_ = counter //имитация чтения в переменную
+			mu.Unlock()
+		}()
+
+	}
+
+	for i := 0; i < 50; i++ {
+		go func() {
+			defer wg.Done()
+			time.Sleep(time.Nanosecond)
+			mu.Lock()
+			counter++
+			mu.Unlock()
+		}()
+	}
+
+	wg.Wait()
+
+	fmt.Println(counter)
+	fmt.Println(time.Now().Sub(start).Seconds())
+}
+
+func readWithRWMutex() {
+	fmt.Println("\n readWithRWMutex")
+
+	start := time.Now()
+	var counter int
+	var wg sync.WaitGroup
+	var mu sync.RWMutex
+
+	wg.Add(100)
+
+	for i := 0; i < 50; i++ {
+		go func() {
+			defer wg.Done()
+			time.Sleep(time.Nanosecond)
+			mu.RLock()
+			_ = counter //имитация чтения в переменную
+			mu.RUnlock()
+		}()
+
+	}
+
+	for i := 0; i < 50; i++ {
+		go func() {
+			defer wg.Done()
+			time.Sleep(time.Nanosecond)
+			mu.Lock()
+			counter++
+			mu.Unlock()
+		}()
+	}
+
+	wg.Wait()
+
+	fmt.Println(counter)
+	fmt.Println(time.Now().Sub(start).Seconds())
 }
