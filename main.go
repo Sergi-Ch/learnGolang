@@ -2,188 +2,124 @@ package main
 
 import (
 	"fmt"
-	"sync"
 	"time"
 )
 
 func main() {
-	//withoutWait()
-	//withWait()
-	//wrongAdd()
-	writeWithoutConcurrent()
-	writeWithConcurrent()
-	writeWithMutexConcurrent()
-	readWithMutex()
-	readWithRWMutex()
+	// Вызов функций для демонстрации различных аспектов работы с каналами
+	// nilChannel()
+	// unbufferedChannel()
+	// bufferChannel()
+	forRange()
 }
 
-func withoutWait() {
-	for i := 0; i < 10; i++ {
-		go fmt.Println(i + 1)
-	}
-
-	fmt.Println("exit")
+func nilChannel() {
+	// Объявление канала без инициализации (nil канал)
+	var nilChannel chan int
+	// Вывод длины и емкости канала (оба будут равны 0)
+	fmt.Printf("len: %d cap: %d\n", len(nilChannel), cap(nilChannel))
+	// Попытка записи в nil канал вызовет deadlock
+	// nilChannel <- 1
 }
 
-func withWait() {
-	var wg sync.WaitGroup //создаем wait группу
-	wg.Add(10)
+func unbufferedChannel() {
+	// Создание небуферизованного канала
+	unbufferedChannel := make(chan int)
+	// Вывод длины и емкости канала (длина 0, емкость 0)
+	fmt.Printf("len: %d cap: %d\n", len(unbufferedChannel), cap(unbufferedChannel))
 
-	for i := 0; i < 10; i++ {
-		go func(i int) {
-			fmt.Println(i + 1)
-			wg.Done()
-		}(i)
-	}
-	wg.Wait()
-	fmt.Println("exit")
+	// Запуск горутины для записи в канал
+	go func(chanForWriting chan<- int) {
+		time.Sleep(time.Second)
+		// Запись значения в канал
+		chanForWriting <- 1
+	}(unbufferedChannel)
+	// Чтение значения из канала
+	value := <-unbufferedChannel
+	println(value)
+
+	// Запуск горутины для чтения из канала
+	go func(chanForReading <-chan int) {
+		time.Sleep(time.Second)
+		// Чтение значения из канала
+		val := <-chanForReading
+		println(val)
+	}(unbufferedChannel)
+	// Запись значения в канал
+	unbufferedChannel <- 2
+	// Закрытие канала
+	close(unbufferedChannel)
 }
 
-func wrongAdd() {
-	var wg sync.WaitGroup
-	for i := 0; i < 10; i++ {
+func bufferChannel() {
+	// Создание буферизованного канала с емкостью 2
+	bufChannel := make(chan int, 2)
+	// Вывод длины и емкости канала (длина 0, емкость 2)
+	fmt.Printf("len: %d cap: %d\n", len(bufChannel), cap(bufChannel))
+	// Запись значений в канал
+	bufChannel <- 1
+	bufChannel <- 2
+	// Вывод длины и емкости канала (длина 2, емкость 2)
+	fmt.Printf("len: %d cap: %d\n", len(bufChannel), cap(bufChannel))
 
-		go func(i int) {
-			wg.Add(1)
-
-			defer wg.Done()
-			fmt.Println(i + 1)
-		}(i)
-
-	}
-
+	// Чтение значений из канала
+	fmt.Println(<-bufChannel)
+	fmt.Println(<-bufChannel)
+	// После чтения значений можно снова записывать в канал
 }
 
-func writeWithoutConcurrent() {
-	fmt.Println("writeWithoutConcurrent")
-	start := time.Now()
-	var counter int
+func forRange() {
+	// Создание буферизованного канала с емкостью 3
+	bufferedChannel := make(chan int, 3)
 
-	for i := 0; i < 1000; i++ {
-		time.Sleep(time.Nanosecond)
-		counter++
+	// Слайс чисел для записи в канал
+	number := []int{5, 6, 7, 8}
+
+	// Запуск горутины для записи чисел в канал
+	go func() {
+		for _, num := range number {
+			bufferedChannel <- num
+		}
+		// Закрытие канала после записи всех значений
+		close(bufferedChannel)
+	}()
+
+	// Чтение значений из канала с проверкой на закрытие канала
+	for {
+		v, ok := <-bufferedChannel
+		fmt.Println(v, ok)
+		if !ok {
+			break
+		}
 	}
 
-	fmt.Println(counter)
-	fmt.Println(time.Now().Sub(start).Seconds())
-}
-
-func writeWithConcurrent() {
-	fmt.Println("\nwriteWithConcurrent")
-	start := time.Now()
-	var counter int
-	var wg sync.WaitGroup
-	wg.Add(1000)
-	for i := 0; i < 1000; i++ {
-		go func() {
-			defer wg.Done()
-			time.Sleep(time.Nanosecond)
-			counter++
-
-		}()
-
-	}
-	wg.Wait()
-	fmt.Println(counter)
-	fmt.Println(time.Now().Sub(start).Seconds())
-}
-
-func writeWithMutexConcurrent() {
-	fmt.Println("\nwriteWithMutexConcurrent")
-	start := time.Now()
-	var counter int
-	var wg sync.WaitGroup
-	var mu sync.Mutex
-
-	wg.Add(1000)
-
-	for i := 0; i < 1000; i++ {
-		go func() {
-			defer wg.Done()
-			time.Sleep(time.Nanosecond)
-			mu.Lock()
-			counter++
-			mu.Unlock()
-
-		}()
-
-	}
-	wg.Wait()
-	fmt.Println(counter)
-	fmt.Println(time.Now().Sub(start).Seconds())
-}
-
-func readWithMutex() {
-	fmt.Println("\n readWithMutex")
-
-	start := time.Now()
-	var counter int
-	var wg sync.WaitGroup
-	var mu sync.Mutex
-
-	wg.Add(100)
-
-	for i := 0; i < 50; i++ {
-		go func() {
-			defer wg.Done()
-
-			mu.Lock()
-			time.Sleep(time.Nanosecond)
-			_ = counter //имитация чтения в переменную
-			mu.Unlock()
-		}()
-
+	// Повторное создание буферизованного канала
+	bufferedChannel = make(chan int, 3)
+	// Запуск горутины для записи чисел в канал
+	go func() {
+		for _, num := range number {
+			bufferedChannel <- num
+		}
+		// Закрытие канала после записи всех значений
+		close(bufferedChannel)
+	}()
+	// Чтение значений из канала с использованием range
+	for v := range bufferedChannel {
+		fmt.Printf("buffered: %#v \n", v)
 	}
 
-	for i := 0; i < 50; i++ {
-		go func() {
-			defer wg.Done()
-			time.Sleep(time.Nanosecond)
-			mu.Lock()
-			counter++
-			mu.Unlock()
-		}()
+	// Создание небуферизованного канала
+	unbufferedChannel := make(chan int)
+	// Запуск горутины для записи чисел в канал
+	go func() {
+		for _, num := range number {
+			unbufferedChannel <- num
+		}
+		// Закрытие канала после записи всех значений
+		close(unbufferedChannel)
+	}()
+	// Чтение значений из канала с использованием range
+	for v := range unbufferedChannel {
+		fmt.Printf("unbuffered: %#v \n", v)
 	}
-
-	wg.Wait()
-
-	fmt.Println(counter)
-	fmt.Println(time.Now().Sub(start).Seconds())
-}
-
-func readWithRWMutex() {
-	fmt.Println("\n readWithRWMutex")
-
-	start := time.Now()
-	var counter int
-	var wg sync.WaitGroup
-	var mu sync.RWMutex
-
-	wg.Add(100)
-
-	for i := 0; i < 50; i++ {
-		go func() {
-			defer wg.Done()
-			time.Sleep(time.Nanosecond)
-			mu.RLock()
-			_ = counter //имитация чтения в переменную
-			mu.RUnlock()
-		}()
-
-	}
-
-	for i := 0; i < 50; i++ {
-		go func() {
-			defer wg.Done()
-			time.Sleep(time.Nanosecond)
-			mu.Lock()
-			counter++
-			mu.Unlock()
-		}()
-	}
-
-	wg.Wait()
-
-	fmt.Println(counter)
-	fmt.Println(time.Now().Sub(start).Seconds())
 }
