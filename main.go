@@ -1,47 +1,84 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
-	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 )
 
-type Home struct {
-	someThingDate []int
-}
-
-type AddNumberData struct {
-	Number int `json:"number"`
-}
-
-func (h *Home) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	switch r.Method {
-
-	case http.MethodGet:
-		for i := 0; i < len(h.someThingDate); i++ {
-			fmt.Fprintf(w, "%d >> %#v \n", i, h.someThingDate[i])
-		}
-
-	case http.MethodPost:
-		fmt.Fprintf(w, "you chosed post method\n")
-		var data AddNumberData
-		err := json.NewDecoder(r.Body).Decode(&data)
-
-		if err != nil {
-			http.Error(w, "invalid request body\n", http.StatusBadRequest)
-			return
-		}
-		h.someThingDate = append(h.someThingDate, data.Number)
-		fmt.Fprintf(w, "Succesful added number>> %d\n\n", data.Number)
-
-		for i := 0; i < len(h.someThingDate); i++ {
-			fmt.Fprintf(w, "%d >> %#v \n", i, h.someThingDate[i])
-		}
-	}
-}
 func main() {
+	//baseSelect()
+	//gracefulShutdown()
+}
 
-	home := Home{someThingDate: make([]int, 0)}
-	http.Handle("/", &home)
-	http.ListenAndServe("localhost:8080", nil)
+func baseSelect() {
+	/*	bufferedChan := make(chan string, 3) //2
+			bufferedChan <- "first"
+
+			select {
+			case str := <-bufferedChan:
+				fmt.Println("read", str)
+			case bufferedChan <- "second":
+				fmt.Println("write", <-bufferedChan, <-bufferedChan)
+			}
+
+				unbufChan := make(chan int)
+
+				go func() {
+					time.Sleep(time.Second)
+					unbufChan <- 1
+				}()
+
+					select {
+					//case bufferedChan <- "third":
+					//	fmt.Println("неблокирующая запись")
+					case val := <-unbufChan:
+						fmt.Println("блокирующее чтение", val)
+					case <-time.After(time.Millisecond * 1500):
+						fmt.Println("ожидание вышло")
+						//default:
+						//	fmt.Println("дефолтная ветка")
+					}
+
+		resultChan := make(chan int)
+		timer := time.After(time.Second)
+
+		go func() {
+			defer close(resultChan)
+
+			for i := 0; i < 1000; i++ {
+				select {
+				case <-timer:
+					fmt.Println("время вышло")
+					return
+				default:
+					time.Sleep(time.Millisecond * 10)
+					resultChan <- i
+				}
+			}
+		}()
+
+		for v := range resultChan {
+			fmt.Println(v)
+		}*/
+}
+
+func gracefulShutdown() {
+	sigChan := make(chan os.Signal, 1)
+
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+
+	timer := time.After(10 * time.Second)
+
+	select {
+	case <-timer:
+		fmt.Println("Время вышло")
+		return
+	case sig := <-sigChan:
+		fmt.Println("Остановилось сигналом: ", sig)
+		return
+	}
+
 }
