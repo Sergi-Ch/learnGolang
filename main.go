@@ -1,168 +1,122 @@
 package main
 
 import (
-	"context"
 	"fmt"
-	"golang.org/x/sync/errgroup"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
 func main() {
-	//chanAsPromise()    // Демонстрация использования каналов как Promise
-	//chanAsMutex()      // Демонстрация использования канала как Mutex
-	//WithOutErrorGroup() // Реализация группы горутин без errgroup
-	errGroup() // Реализация группы горутин с errgroup
+	//Различные примеры работы с атомарными операциями и мьютексами
+	//AddMutex()       // Пример с использованием мьютекса
+	//AddAtomic()      // Пример с использованием atomic
+	//StoreLoadSwap()  // Пример Load/Store/Swap операций
+	//compareAndSwap() // Пример CompareAndSwap операции
+	//atomicVal()      // Пример работы с atomic.Value
 }
 
-// makeRequest имитирует асинхронный HTTP-запрос
-// num - номер запроса для идентификации
-// Возвращает канал, в который будет отправлен результат
-func makeRequest(num int) <-chan string {
-	responseChan := make(chan string)
+// AddMutex демонстрирует инкремент счетчика с использованием мьютекса
+func AddMutex() {
+	start := time.Now()
+	var (
+		counter int64          // Счетчик
+		wg      sync.WaitGroup // Группа ожидания для горутин
+		mu      sync.Mutex     // Мьютекс для синхронизации доступа
+	)
 
-	go func() {
-		time.Sleep(time.Second) // Имитация долгого запроса
-		responseChan <- fmt.Sprintf("response numb %d", num)
-	}()
-	return responseChan
-}
-
-// chanAsPromise демонстрирует паттерн "как Promise" в Go
-// Запускает два асинхронных запроса и ожидает их завершения
-func chanAsPromise() {
-	firstResponceChan := makeRequest(1)  // Первый асинхронный запрос
-	SecondResponceChan := makeRequest(2) // Второй асинхронный запрос
-
-	// Можно выполнять другие операции, пока запросы выполняются
-	fmt.Println("non blocking")
-
-	// Ожидаем завершения обоих запросов (аналог Promise.all)
-	fmt.Println(<-firstResponceChan, <-SecondResponceChan)
-}
-
-// chanAsMutex демонстрирует использование канала как мьютекса
-// для защиты общего ресурса (counter) от гонки данных
-func chanAsMutex() {
-	var counter int
-	// Канал с буфером 1 используется как бинарный семафор
-	mutexChan := make(chan struct{}, 1)
-	wg := sync.WaitGroup{}
+	wg.Add(1000) // Добавляем 1000 задач в группу ожидания
 
 	for i := 0; i < 1000; i++ {
-		wg.Add(1)
-
 		go func() {
-			defer wg.Done()
-
-			mutexChan <- struct{}{} // Захват "мьютекса"
-			counter++               // Критическая секция
-			<-mutexChan             // Освобождение "мьютекса"
+			defer wg.Done() // Уменьшаем счетчик группы при завершении
+			mu.Lock()       // Блокируем доступ к счетчику
+			counter++       // Инкрементируем счетчик
+			mu.Unlock()     // Разблокируем доступ
 		}()
 	}
-
-	wg.Wait()
-	fmt.Println(counter) // Должно быть 1000
+	wg.Wait() // Ожидаем завершения всех горутин
+	fmt.Println(counter)
+	fmt.Println("with mutex: ", time.Now().Sub(start).Seconds())
 }
 
-// WithOutErrorGroup показывает реализацию группы горутин
-// с обработкой ошибок без использования errgroup
-func WithOutErrorGroup() {
-	var err error
+// AddAtomic демонстрирует инкремент счетчика с использованием atomic
+func AddAtomic() {
+	start := time.Now()
 
-	// Создаем отменяемый контекст для прерывания горутин
-	ctx, cancel := context.WithCancel(context.Background())
-	wg := sync.WaitGroup{}
+	var (
+		counter int64          // Счетчик
+		wg      sync.WaitGroup // Группа ожидания
+	)
 
-	wg.Add(3) // Ожидаем завершения 3 горутин
+	wg.Add(1000) // Добавляем 1000 задач
 
-	// Горутина 1
-	go func() {
-		time.Sleep(time.Second)
-		defer wg.Done()
-
-		select {
-		case <-ctx.Done(): // Проверяем отмену
-			return
-		default:
-			fmt.Println("first started")
-			time.Sleep(time.Second)
-		}
-	}()
-
-	// Горутина 2 (возвращает ошибку)
-	go func() {
-		time.Sleep(time.Second)
-		defer wg.Done()
-
-		select {
-		case <-ctx.Done():
-			return
-		default:
-			fmt.Println("second started")
-			err = fmt.Errorf("any error") // Устанавливаем ошибку
-			cancel()                      // Отменяем другие горутины
-		}
-	}()
-
-	// Горутина 3
-	go func() {
-		defer wg.Done()
-
-		select {
-		case <-ctx.Done(): // Будет отменена из-за ошибки в горутине 2
-			return
-		default:
-			fmt.Println("third started")
-			time.Sleep(time.Second)
-		}
-	}()
-
-	wg.Wait()
-	fmt.Println(err) // Выводим ошибку (если была)
-}
-
-// errGroup демонстрирует использование errgroup для управления группой горутин
-// с автоматической отменой при возникновении ошибки
-func errGroup() {
-	// Создаем группу с общим контекстом
-	g, ctx := errgroup.WithContext(context.Background())
-
-	// Горутина 1
-	g.Go(func() error {
-		time.Sleep(time.Second)
-
-		select {
-		case <-ctx.Done(): // Проверяем отмену контекста
-			return nil
-		default:
-			fmt.Println("first started")
-			time.Sleep(time.Second)
-			return nil
-		}
-	})
-
-	// Горутина 2 (возвращает ошибку)
-	g.Go(func() error {
-		fmt.Println("second started")
-		return fmt.Errorf("unexpeted error in request 2")
-	})
-
-	// Горутина 3
-	g.Go(func() error {
-		select {
-		case <-ctx.Done(): // Будет отменена из-за ошибки в горутине 2
-			return nil
-		default:
-			fmt.Println("third started")
-			time.Sleep(time.Second)
-			return nil
-		}
-	})
-
-	// Ожидаем завершения всех горутин
-	// Если была ошибка - выводим ее
-	if err := g.Wait(); err != nil {
-		fmt.Println(err)
+	for i := 0; i < 1000; i++ {
+		go func() {
+			defer wg.Done() // Уменьшаем счетчик группы
+			// Атомарно увеличиваем счетчик
+			atomic.AddInt64(&counter, 1)
+		}()
 	}
+	wg.Wait() // Ожидаем завершения
+	fmt.Println(counter)
+	fmt.Println("with atomic: ", time.Now().Sub(start).Seconds())
+}
+
+// StoreLoadSwap демонстрирует базовые атомарные операции
+func StoreLoadSwap() {
+	var counter int64
+
+	// Атомарное чтение значения
+	fmt.Println(atomic.LoadInt64(&counter))
+
+	// Атомарная запись значения
+	atomic.StoreInt64(&counter, 5)
+	fmt.Println(atomic.LoadInt64(&counter))
+
+	// Атомарная замена значения и возврат старого
+	fmt.Println(atomic.SwapInt64(&counter, 10))
+	// Проверка нового значения
+	fmt.Println(atomic.LoadInt64(&counter))
+}
+
+// compareAndSwap демонстрирует операцию сравнения и замены
+func compareAndSwap() {
+	var (
+		counter int64          // Счетчик
+		wg      sync.WaitGroup // Группа ожидания
+	)
+	wg.Add(100) // 100 горутин
+
+	for i := 0; i < 100; i++ {
+		go func(i int) {
+			defer wg.Done()
+
+			// Пытаемся изменить значение, только если оно равно 0
+			if !atomic.CompareAndSwapInt64(&counter, 0, 1) {
+				return
+			}
+			// Выводим номер горутины, которой удалось изменить значение
+			fmt.Println("swapped goroutine number is", i)
+		}(i)
+	}
+	wg.Wait()
+	fmt.Println(counter)
+}
+
+// atomicVal демонстрирует работу с atomic.Value
+func atomicVal() {
+	var (
+		value atomic.Value // Значение произвольного типа
+	)
+
+	// Сохраняем значение
+	value.Store(1)
+	// Читаем значение
+	fmt.Println(value.Load())
+
+	// Пытаемся заменить значение, если текущее равно 1
+	fmt.Println(value.CompareAndSwap(1, 3))
+	// Читаем новое значение
+	fmt.Println(value.Load())
 }
