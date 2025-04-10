@@ -2,121 +2,130 @@ package main
 
 import (
 	"fmt"
-	"sync"
-	"sync/atomic"
-	"time"
 )
 
+// Numbers - объединение типов для использования в дженериках
+type Numbers interface {
+	int64 | float64
+}
+
+// Numbrs - обобщенный тип срезов чисел (с опечаткой в названии)
+type Numbrs[T Numbers] []T
+
 func main() {
-	//Различные примеры работы с атомарными операциями и мьютексами
-	//AddMutex()       // Пример с использованием мьютекса
-	//AddAtomic()      // Пример с использованием atomic
-	//StoreLoadSwap()  // Пример Load/Store/Swap операций
-	//compareAndSwap() // Пример CompareAndSwap операции
-	//atomicVal()      // Пример работы с atomic.Value
+	//showSum()
+	//showContains()
+	//showAny()
+	//unionInterfaceAndType()
 }
 
-// AddMutex демонстрирует инкремент счетчика с использованием мьютекса
-func AddMutex() {
-	start := time.Now()
-	var (
-		counter int64          // Счетчик
-		wg      sync.WaitGroup // Группа ожидания для горутин
-		mu      sync.Mutex     // Мьютекс для синхронизации доступа
-	)
+// showSum демонстрирует функцию sum для разных типов чисел
+func showSum() {
+	floats := []float64{1.0, 2.0, 3.0}
+	ints := []int64{1, 2, 3}
+	fmt.Println(sum(floats))
+	fmt.Println(sum(ints))
+}
 
-	wg.Add(1000) // Добавляем 1000 задач в группу ожидания
-
-	for i := 0; i < 1000; i++ {
-		go func() {
-			defer wg.Done() // Уменьшаем счетчик группы при завершении
-			mu.Lock()       // Блокируем доступ к счетчику
-			counter++       // Инкрементируем счетчик
-			mu.Unlock()     // Разблокируем доступ
-		}()
+// sum возвращает сумму элементов среза (работает с int64 и float64)
+func sum[V int64 | float64](numbers []V) V {
+	var sum V
+	for _, num := range numbers {
+		sum += num
 	}
-	wg.Wait() // Ожидаем завершения всех горутин
-	fmt.Println(counter)
-	fmt.Println("with mutex: ", time.Now().Sub(start).Seconds())
+	return sum
 }
 
-// AddAtomic демонстрирует инкремент счетчика с использованием atomic
-func AddAtomic() {
-	start := time.Now()
-
-	var (
-		counter int64          // Счетчик
-		wg      sync.WaitGroup // Группа ожидания
-	)
-
-	wg.Add(1000) // Добавляем 1000 задач
-
-	for i := 0; i < 1000; i++ {
-		go func() {
-			defer wg.Done() // Уменьшаем счетчик группы
-			// Атомарно увеличиваем счетчик
-			atomic.AddInt64(&counter, 1)
-		}()
+// showContains демонстрирует поиск элемента в срезах разных типов
+func showContains() {
+	type Person struct {
+		name     string
+		age      int64
+		jobTitle string
 	}
-	wg.Wait() // Ожидаем завершения
-	fmt.Println(counter)
-	fmt.Println("with atomic: ", time.Now().Sub(start).Seconds())
-}
 
-// StoreLoadSwap демонстрирует базовые атомарные операции
-func StoreLoadSwap() {
-	var counter int64
+	ints := []int64{1, 2, 3, 4, 5}
+	fmt.Println("int: ", contains(ints, 4))
 
-	// Атомарное чтение значения
-	fmt.Println(atomic.LoadInt64(&counter))
+	strings := []string{"Vasya", "Anton", "Katya"}
+	fmt.Println("string:", contains(strings, "Katya"))
+	fmt.Println("string:", contains(strings, "Sasha"))
 
-	// Атомарная запись значения
-	atomic.StoreInt64(&counter, 5)
-	fmt.Println(atomic.LoadInt64(&counter))
-
-	// Атомарная замена значения и возврат старого
-	fmt.Println(atomic.SwapInt64(&counter, 10))
-	// Проверка нового значения
-	fmt.Println(atomic.LoadInt64(&counter))
-}
-
-// compareAndSwap демонстрирует операцию сравнения и замены
-func compareAndSwap() {
-	var (
-		counter int64          // Счетчик
-		wg      sync.WaitGroup // Группа ожидания
-	)
-	wg.Add(100) // 100 горутин
-
-	for i := 0; i < 100; i++ {
-		go func(i int) {
-			defer wg.Done()
-
-			// Пытаемся изменить значение, только если оно равно 0
-			if !atomic.CompareAndSwapInt64(&counter, 0, 1) {
-				return
-			}
-			// Выводим номер горутины, которой удалось изменить значение
-			fmt.Println("swapped goroutine number is", i)
-		}(i)
+	people := []Person{
+		{
+			name:     "Vasya",
+			age:      20,
+			jobTitle: "programmer",
+		},
+		{
+			name:     "Dasha",
+			age:      28,
+			jobTitle: "Designer",
+		},
 	}
-	wg.Wait()
-	fmt.Println(counter)
+
+	// Демонстрация сравнения структур
+	fmt.Println("structs: ", contains(people, Person{
+		name:     "Vasya",
+		age:      21,
+		jobTitle: "programmer",
+	}))
+
+	fmt.Println("structs: ", contains(people, Person{
+		name:     "Vasya",
+		age:      20,
+		jobTitle: "programmer",
+	}))
 }
 
-// atomicVal демонстрирует работу с atomic.Value
-func atomicVal() {
-	var (
-		value atomic.Value // Значение произвольного типа
-	)
+// contains проверяет наличие элемента в срезе (для comparable типов)
+func contains[T comparable](elements []T, searchEl T) bool {
+	for _, el := range elements {
+		if searchEl == el {
+			return true
+		}
+	}
+	return false
+}
 
-	// Сохраняем значение
-	value.Store(1)
-	// Читаем значение
-	fmt.Println(value.Load())
+// show демонстрирует работу с любыми типами (any)
+func showAny() {
+	show(1, 2, 3)
+	show("one", "two", "three")
+	show([]int64{1, 2, 3}, []int64{4, 5, 6})
+	show(map[string]int64{
+		"first":  1,
+		"second": 2,
+	})
+	show(interface{}(1), interface{}("string"), any(struct {
+		name string
+	}{name: "Vova"}))
+}
 
-	// Пытаемся заменить значение, если текущее равно 1
-	fmt.Println(value.CompareAndSwap(1, 3))
-	// Читаем новое значение
-	fmt.Println(value.Load())
+// show выводит элементы любого типа
+func show[T any](entities ...T) {
+	fmt.Println(entities)
+}
+
+// unionInterfaceAndType демонстрирует использование интерфейса типов с дженериками
+func unionInterfaceAndType() {
+	var ints Numbrs[int64]
+	ints = append(ints, []int64{1, 2, 3, 4, 5}...) // ... распаковывает срез
+
+	floats := Numbrs[float64]{1.0, 2, 3, 4, 5}
+
+	fmt.Println("ints:", ints)
+	fmt.Println("floats:", floats)
+
+	fmt.Println("sum ints:", sumUnionInterface(ints))
+	fmt.Println("sum floats:", sumUnionInterface(floats))
+}
+
+// sumUnionInterface возвращает сумму для типов, определенных в Numbers
+func sumUnionInterface[V Numbers](numbers []V) V {
+	var sum V
+	for _, numb := range numbers {
+		sum += numb
+	}
+	return sum
 }
