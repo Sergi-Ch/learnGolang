@@ -2,130 +2,97 @@ package main
 
 import (
 	"fmt"
+	"log"
+	"os"
 )
 
-// Numbers - объединение типов для использования в дженериках
-type Numbers interface {
-	int64 | float64
-}
-
-// Numbrs - обобщенный тип срезов чисел (с опечаткой в названии)
-type Numbrs[T Numbers] []T
-
 func main() {
-	//showSum()
-	//showContains()
-	//showAny()
-	//unionInterfaceAndType()
+	// Вызываем функции для демонстрации работы с выводом и вводом
+	outputDemo()
+	inputDemo()
 }
 
-// showSum демонстрирует функцию sum для разных типов чисел
-func showSum() {
-	floats := []float64{1.0, 2.0, 3.0}
-	ints := []int64{1, 2, 3}
-	fmt.Println(sum(floats))
-	fmt.Println(sum(ints))
-}
-
-// sum возвращает сумму элементов среза (работает с int64 и float64)
-func sum[V int64 | float64](numbers []V) V {
-	var sum V
-	for _, num := range numbers {
-		sum += num
+// outputDemo демонстрирует различные способы вывода данных
+func outputDemo() {
+	// 1. Вывод в консоль с помощью fmt.Println
+	// Возвращает количество записанных байт и ошибку
+	count, err := fmt.Println("some text")
+	if err != nil {
+		log.Fatalf("Ошибка при выводе: %v", err)
 	}
-	return sum
-}
+	fmt.Printf("Количество записанных байт: %d\n", count)
 
-// showContains демонстрирует поиск элемента в срезах разных типов
-func showContains() {
-	type Person struct {
-		name     string
-		age      int64
-		jobTitle string
+	// 2. Форматированный вывод в стандартный поток вывода (stdout)
+	count, err = fmt.Fprintf(os.Stdout, "Stdout from FprintF\n")
+	if err != nil {
+		log.Fatalf("Ошибка при выводе в stdout: %v", err)
 	}
+	fmt.Printf("Количество записанных байт: %d\n", count)
 
-	ints := []int64{1, 2, 3, 4, 5}
-	fmt.Println("int: ", contains(ints, 4))
-
-	strings := []string{"Vasya", "Anton", "Katya"}
-	fmt.Println("string:", contains(strings, "Katya"))
-	fmt.Println("string:", contains(strings, "Sasha"))
-
-	people := []Person{
-		{
-			name:     "Vasya",
-			age:      20,
-			jobTitle: "programmer",
-		},
-		{
-			name:     "Dasha",
-			age:      28,
-			jobTitle: "Designer",
-		},
+	// 3. Форматированный вывод в стандартный поток ошибок (stderr)
+	count, err = fmt.Fprintf(os.Stderr, "Stderr from FprintF\n")
+	if err != nil {
+		log.Fatalf("Ошибка при выводе в stderr: %v", err)
 	}
+	fmt.Printf("Количество записанных байт: %d\n", count)
 
-	// Демонстрация сравнения структур
-	fmt.Println("structs: ", contains(people, Person{
-		name:     "Vasya",
-		age:      21,
-		jobTitle: "programmer",
-	}))
-
-	fmt.Println("structs: ", contains(people, Person{
-		name:     "Vasya",
-		age:      20,
-		jobTitle: "programmer",
-	}))
-}
-
-// contains проверяет наличие элемента в срезе (для comparable типов)
-func contains[T comparable](elements []T, searchEl T) bool {
-	for _, el := range elements {
-		if searchEl == el {
-			return true
+	// 4. Создание файла для записи
+	file, err := os.Create("test.txt")
+	if err != nil {
+		log.Fatalf("Ошибка при создании файла: %v", err)
+	}
+	defer func() {
+		// Закрытие файла при завершении функции
+		err := file.Close()
+		if err != nil {
+			log.Fatalf("Ошибка при закрытии файла: %v", err)
 		}
+	}()
+
+	// Запись в файл с помощью fmt.Fprintf
+	message := "hello it's check for writing and reading,\nmy friend"
+	count, err = fmt.Fprintf(file, message)
+	if err != nil {
+		log.Fatalf("Ошибка при записи в файл: %v\n", err)
 	}
-	return false
+	fmt.Printf("В файл записано %d байт\n", count)
 }
 
-// show демонстрирует работу с любыми типами (any)
-func showAny() {
-	show(1, 2, 3)
-	show("one", "two", "three")
-	show([]int64{1, 2, 3}, []int64{4, 5, 6})
-	show(map[string]int64{
-		"first":  1,
-		"second": 2,
-	})
-	show(interface{}(1), interface{}("string"), any(struct {
-		name string
-	}{name: "Vova"}))
-}
+// inputDemo демонстрирует различные способы ввода данных
+func inputDemo() {
+	var (
+		text1 string
+		text2 string
+	)
 
-// show выводит элементы любого типа
-func show[T any](entities ...T) {
-	fmt.Println(entities)
-}
-
-// unionInterfaceAndType демонстрирует использование интерфейса типов с дженериками
-func unionInterfaceAndType() {
-	var ints Numbrs[int64]
-	ints = append(ints, []int64{1, 2, 3, 4, 5}...) // ... распаковывает срез
-
-	floats := Numbrs[float64]{1.0, 2, 3, 4, 5}
-
-	fmt.Println("ints:", ints)
-	fmt.Println("floats:", floats)
-
-	fmt.Println("sum ints:", sumUnionInterface(ints))
-	fmt.Println("sum floats:", sumUnionInterface(floats))
-}
-
-// sumUnionInterface возвращает сумму для типов, определенных в Numbers
-func sumUnionInterface[V Numbers](numbers []V) V {
-	var sum V
-	for _, numb := range numbers {
-		sum += numb
+	// 1. Чтение из стандартного ввода (консоли)
+	fmt.Println("Введите два слова через пробел:")
+	count, err := fmt.Scan(&text1, &text2)
+	if err != nil {
+		log.Fatalf("Ошибка при чтении из консоли: %v", err)
 	}
-	return sum
+	fmt.Printf("Прочитано: %s %s (количество успешно прочитанных значений: %d)\n",
+		text1, text2, count)
+
+	// 2. Открытие файла для чтения
+	file, err := os.Open("test.txt")
+	if err != nil {
+		log.Panicf("Ошибка при открытии файла: %v", err)
+	}
+	defer func() {
+		// Закрытие файла при завершении функции
+		err := file.Close()
+		if err != nil {
+			log.Fatalf("Ошибка при закрытии файла: %v", err)
+		}
+	}()
+
+	// Чтение из файла с помощью fmt.Fscan
+	// Fscan читает до пробелов или переноса строки (с припиской ln)
+	count, err = fmt.Fscan(file, &text1, &text2)
+	if err != nil {
+		log.Printf("Ошибка при чтении файла: %v", err)
+	}
+	fmt.Printf("Из файла прочитано: %s %s (количество значений: %d)\n",
+		text1, text2, count)
 }
